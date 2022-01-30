@@ -8,6 +8,8 @@ const port = 4500 ||process.env.PORT;
 
 const app = express();
 
+
+const users=[{}];
 app.use(cors());
 app.get("/",(req,res)=>{
     res.send("it working ");
@@ -16,8 +18,23 @@ app.get("/",(req,res)=>{
 const server = http.createServer(app);
 const io= socketIO(server);
 
-io.on("connection",()=>{
+io.on("connection",(socket)=>{
     console.log("New connection");
+   
+    socket.on('joined',({user})=>{
+        users[socket.id]=user;
+        socket.broadcast.emit('userJoined',{user:"Admin",message:`${users[socket.id]} has joined`});
+        socket.emit('welcome',{user:"Admin",message:`Lets hangout bruh`})
+    })
+
+    socket.on('message',({message,id})=>{
+        io.emit('sendMessage',{user:users[id],message,id})
+    })
+   socket.on('disconnect',()=>{
+       socket.broadcast.emit('leave',{user:"Admin",message:`${users[socket.id]} has left`});
+   })
+
+
 })
 
 server.listen(port,()=>{
